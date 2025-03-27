@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  grafana:
+    image: grafana/grafana:10.4.0
+    volumes:
+      - /opt/monitoring-data/grafana:/var/lib/grafana
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.horecasoft.ru`)"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=myresolver"
+    networks:
+      - horecasoft_network
+
+  mimir:
+    image: grafana/mimir:2.11.0
+    command: [
+      "-config.file=/etc/mimir/config.yaml",
+      "-target=all"
+    ]
+    volumes:
+      - /opt/monitoring-data/mimir:/data
+      - /opt/monitoring-configs/mimir:/etc/mimir
+
+      - /opt/monitoring-data/mimir/activity:/data/activity
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mimir.rule=Host(`mimir.horecasoft.ru`)"
+      - "traefik.http.services.mimir.loadbalancer.server.port=9009"
+      - "traefik.http.routers.mimir.tls=true"
+      - "traefik.http.routers.mimir.tls.certresolver=myresolver"
+    networks:
+      - horecasoft_network
+
+  loki:
+    image: grafana/loki:3.0.0
+    command: [
+      "-config.file=/etc/loki/config.yaml",
+      "-log-config-reverse-order",
+      "-target=all"
+    ]
+    volumes:
+      - /opt/monitoring-data/loki/chunks:/loki/chunks
+      - /opt/monitoring-data/loki/index:/loki/index
+      - /opt/monitoring-data/loki/boltdb-cache:/loki/boltdb-cache
+      - /opt/monitoring-data/loki/compactor:/loki/compactor
+      - /opt/monitoring-configs/loki:/etc/loki
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.loki.rule=Host(`loki.horecasoft.ru`)"
+      - "traefik.http.services.loki.loadbalancer.server.port=3100"
+      - "traefik.http.routers.loki.tls=true"
+      - "traefik.http.routers.loki.tls.certresolver=myresolver"
+    networks:
+      - horecasoft_network
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    command: [
+      "--config.file=/etc/alertmanager/config.yaml",
+      "--storage.path=/alertmanager",
+      "--web.external-url=http://alertmanager.horecasoft.ru"
+    ]
+    volumes:
+      - /opt/monitoring-data/alertmanager:/alertmanager
+      - /opt/monitoring-configs/alertmanager:/etc/alertmanager
+      - /opt/monitoring-configs/alertmanager/templates:/etc/alertmanager/templates
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alertmanager.rule=Host(`alertmanager.horecasoft.ru`)"
+      - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
+      - "traefik.http.routers.alertmanager.tls=true"
+      - "traefik.http.routers.alertmanager.tls.certresolver=myresolver"
+    networks:
+      - horecasoft_network
+
+networks:
+  horecasoft_network:
+    external: true

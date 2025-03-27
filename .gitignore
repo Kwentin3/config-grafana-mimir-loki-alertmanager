@@ -10,3 +10,6 @@ inventory/*_vault
 # Docker
 /data/
 /opt/
+# Игнорируем env-файлы
+compose/*/.env*
+compose/*/secrets/
