@@ -1,0 +1,70 @@
+auth_enabled: true  # Включение multi-tenancy для разных организаций
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: info  # Уровень логирования для production
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/boltdb-cache
+    shared_store: filesystem
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  retention_period: 720h  # 30 дней по умолчанию
+  retention_stream:
+    - selector: '{job=~"infra/.*"}'
+      priority: 10
+      period: 2160h  # 90 дней для инфраструктурных логов
+    - selector: '{container="postgres"}'
+      priority: 5
+      period: 8760h  # 1 год для логов PostgreSQL
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h  # Отклонять данные старше 7 дней
+
+ruler:
+  alertmanager_url: http://alertmanager:9093  # Интеграция с Alertmanager
+  external_url: http://loki.horecasoft.ru  # Внешний URL для ссылок в алертах
+  enable_api: true
+
+compactor:
+  working_directory: /loki/compactor
+  shared_store: filesystem
+  retention_enabled: true
+  compaction_interval: 10m
+
+analytics:
+  reporting_enabled: false  # Отключаем телеметрию
+
+query_frontend:
+  max_outstanding_requests_per_tenant: 2048  # Лимиты для многопользовательского режима
+
+ingester:
+  lifecycler:
+    ring:
+      replication_factor: 1
+  chunk_idle_period: 30m
+  chunk_target_size: 1572864  # 1.5MB
+  max_transfer_retries: 0

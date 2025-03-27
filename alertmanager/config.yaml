@@ -1,0 +1,56 @@
+global:
+  smtp_smarthost: 'smtp.yandex.ru:465'  # Ваш SMTP-сервер
+  smtp_from: 'alertmanager@horecasoft.ru'
+  smtp_auth_username: 'alertmanager@horecasoft.ru'
+  smtp_auth_password: 'your_strong_password'  # Пароль приложения Яндекс
+  smtp_require_tls: true
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: 'default-email'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-team'
+      continue: false
+    - match_re:
+        team: '(frontend|backend)'
+      receiver: 'dev-ops-team'
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster']
+
+receivers:
+  - name: 'default-email'
+    email_configs:
+      - to: 'alerts@horecasoft.ru'
+        send_resolved: true
+        html: '{{ template "email.default.html" . }}'
+        headers:
+          Subject: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+
+  - name: 'critical-team'
+    email_configs:
+      - to: 'critical-alerts@horecasoft.ru'
+        send_resolved: true
+    webhook_configs:
+      - url: 'http://oncall-system/api/v1/alerts'
+        send_resolved: true
+
+  - name: 'dev-ops-team'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/XXX/YYY/ZZZ'
+        channel: '#alerts'
+        title: '{{ .CommonLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
