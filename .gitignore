@@ -1,0 +1,12 @@
+# Sensitive data
+*.env
+*.key
+*.crt
+*.secret
+
+# Ansible
+inventory/*_vault
+
+# Docker
+/data/
+/opt/
