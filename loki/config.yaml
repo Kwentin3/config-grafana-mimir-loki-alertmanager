@@ -1,9 +1,9 @@
-auth_enabled: true
+auth_enabled: false
 
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
-  log_level: warn
+  log_level: info
 
 common:
   path_prefix: /loki
@@ -41,7 +41,8 @@ ruler:
 compactor:
   working_directory: /loki/compactor
   compaction_interval: 10m
-  retention_enabled: false  # Временно отключаем retention
+  retention_enabled: true
+  delete_request_store: filesystem
 
 ingester:
   lifecycler:
@@ -53,3 +54,4 @@ ingester:
 
 analytics:
   reporting_enabled: false
+

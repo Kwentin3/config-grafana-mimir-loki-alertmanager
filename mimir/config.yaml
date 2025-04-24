@@ -1,5 +1,5 @@
 # /opt/monitoring-configs/mimir/config.yaml
-multitenancy_enabled: true
+multitenancy_enabled: false
 
 # Настройки сервера
 server:
