@@ -62,7 +62,7 @@ services:
     command: [
       "--config.file=/etc/alertmanager/config.yaml",
       "--storage.path=/alertmanager",
-      "--web.external-url=http://alertmanager.horecasoft.ru"
+      "--web.external-url=https://alertmanager.horecasoft.ru"
     ]
     volumes:
       - /opt/monitoring-data/alertmanager:/alertmanager
